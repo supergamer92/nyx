@@ -21,12 +21,14 @@ jobs:
       - name: Build ISO inside Arch Linux Container
         run: |
           docker run --rm --privileged \
-            -v ${{ github.workspace }}:/workspace \
-            w/workspace \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
             archlinux:latest \
             /bin/bash -c "
               set -e
-              echo '==> Updating package databases and installing archiso...'
+              echo '==> Initializing pacman keys and updating package database...'
+              pacman-key --init || true
+              pacman-key --populate || true
               pacman -Sy --noconfirm archiso git sudo
               
               echo '==> Preparing build environment...'

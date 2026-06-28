@@ -42,7 +42,10 @@ jobs:
               pacman -Sy --noconfirm archlinux-keyring || true
               
               echo '==> Installing required system packages...'
-              pacman -Syu --noconfirm archiso git sudo rust pkg-config wayland wayland-protocols libinput systemd mesa libxkbcommon pixman seatd libdisplay-info
+              pacman -Syu --noconfirm archiso git sudo rust pkg-config wayland wayland-protocols libinput systemd mesa libxkbcommon pixman seatd
+              
+              echo '==> Installing compatible libdisplay-info version (0.2.0) from Archive...'
+              pacman -U --noconfirm https://archive.archlinux.org/packages/l/libdisplay-info/libdisplay-info-0.2.0-1-x86_64.pkg.tar.zst
               
               echo '==> Building Nyx compositor and shell binaries...'
               cargo build --release -p nyx-compositor -p nyx-shell -p nyx-settingsd -p nyx-hw -p nyx-updater

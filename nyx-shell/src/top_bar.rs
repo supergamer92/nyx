@@ -57,14 +57,20 @@ pub fn view<'a>(state: &TopBarState, clock: &str, theme: &NyxTheme) -> Element<'
         .on_press(TopBarMessage::OpenNotifications)
         .style(move |_t: &Theme, s: Status| btn_style(&t2, s));
 
-    let wifi = if state.wifi_connected { "📶" } else { "📵" };
-    let vol = if state.volume > 0.5 { "🔊" } else if state.volume > 0.0 { "🔉" } else { "🔇" };
-    let bat = if state.battery_percent > 50 { "🔋" } else { "🪫" };
-    let dnd = if state.do_not_disturb { "🔕" } else { "" };
-    let tray = format!("{}{} {} {} {}%", dnd, wifi, vol, bat, state.battery_percent);
+    let mut tray_row = row![].spacing(Spacing::XS).align_y(Alignment::Center);
+
+    if state.do_not_disturb {
+        tray_row = tray_row.push(crate::icon::render_system_icon("dnd", 14.0, colors.text_secondary));
+    }
+    if state.wifi_connected {
+        tray_row = tray_row.push(crate::icon::render_system_icon("wifi", 14.0, colors.text_primary));
+    }
+    tray_row = tray_row.push(crate::icon::render_system_icon("volume", 14.0, colors.text_primary));
+    tray_row = tray_row.push(crate::icon::render_system_icon("battery", 14.0, colors.text_primary));
+    tray_row = tray_row.push(text(format!("{}%", state.battery_percent)).size(Typography::SIZE_BODY_SM).color(colors.text_primary));
 
     let t3 = theme.clone();
-    let right = button(text(tray).size(Typography::SIZE_BODY_SM))
+    let right = button(tray_row)
         .padding(Padding::from([6.0, 16.0]))
         .on_press(TopBarMessage::OpenControlCenter)
         .style(move |_t: &Theme, s: Status| btn_style(&t3, s));

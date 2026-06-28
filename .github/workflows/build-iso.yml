@@ -70,21 +70,21 @@ jobs:
               
               echo '==> Creating Desktop startup launcher...'
               cat << 'STARTEOF' > /tmp/nyx-iso-build/airootfs/usr/bin/nyx-start-desktop
-#!/bin/bash
-set -e
-exec > /tmp/nyx-desktop.log 2>&1
-echo "[nyx] Starting Nyx OS Desktop Session..."
-echo "[nyx] Date: $(date)"
+              #!/bin/bash
+              set -e
+              exec > /tmp/nyx-desktop.log 2>&1
+              echo "[nyx] Starting Nyx OS Desktop Session..."
+              echo "[nyx] Date: \$(date)"
 
-# Start the settings daemon in the background
-echo "[nyx] Starting nyx-settingsd..."
-/usr/bin/nyx-settingsd &
+              # Start the settings daemon in the background
+              echo "[nyx] Starting nyx-settingsd..."
+              /usr/bin/nyx-settingsd &
 
-# Use cage (kiosk Wayland compositor) to launch nyx-shell fullscreen.
-# cage handles all DRM/KMS setup and creates the Wayland display automatically.
-echo "[nyx] Launching cage with nyx-shell..."
-exec cage -s -- /usr/bin/nyx-shell
-STARTEOF
+              # Use cage (kiosk Wayland compositor) to launch nyx-shell fullscreen.
+              # cage handles all DRM/KMS setup and creates the Wayland display automatically.
+              echo "[nyx] Launching cage with nyx-shell..."
+              exec cage -s -- /usr/bin/nyx-shell
+              STARTEOF
               chmod +x /tmp/nyx-iso-build/airootfs/usr/bin/nyx-start-desktop
               
               echo '==> Configuring automatic GUI desktop boot service...'
@@ -96,31 +96,31 @@ STARTEOF
               ln -sf /usr/lib/systemd/system/seatd.service /tmp/nyx-iso-build/airootfs/etc/systemd/system/multi-user.target.wants/seatd.service
               
               cat << 'SVCEOF' > /tmp/nyx-iso-build/airootfs/etc/systemd/system/nyx-desktop.service
-[Unit]
-Description=Nyx OS Desktop GUI Session
-After=seatd.service systemd-logind.service
-Wants=seatd.service
-ConditionPathExists=/usr/bin/nyx-shell
+              [Unit]
+              Description=Nyx OS Desktop GUI Session
+              After=seatd.service systemd-logind.service
+              Wants=seatd.service
+              ConditionPathExists=/usr/bin/nyx-shell
 
-[Service]
-Type=simple
-User=root
-PAMName=login
-TTYPath=/dev/tty7
-StandardInput=tty
-StandardOutput=journal
-StandardError=journal
-UtmpIdentifier=tty7
-ExecStart=/usr/bin/nyx-start-desktop
-Restart=on-failure
-RestartSec=3
-Environment=XDG_RUNTIME_DIR=/run/user/0
-Environment=XDG_SESSION_TYPE=wayland
-Environment=WLR_LIBINPUT_NO_DEVICES=1
+              [Service]
+              Type=simple
+              User=root
+              PAMName=login
+              TTYPath=/dev/tty7
+              StandardInput=tty
+              StandardOutput=journal
+              StandardError=journal
+              UtmpIdentifier=tty7
+              ExecStart=/usr/bin/nyx-start-desktop
+              Restart=on-failure
+              RestartSec=3
+              Environment=XDG_RUNTIME_DIR=/run/user/0
+              Environment=XDG_SESSION_TYPE=wayland
+              Environment=WLR_LIBINPUT_NO_DEVICES=1
 
-[Install]
-WantedBy=multi-user.target
-SVCEOF
+              [Install]
+              WantedBy=multi-user.target
+              SVCEOF
 
               ln -sf /etc/systemd/system/nyx-desktop.service /tmp/nyx-iso-build/airootfs/etc/systemd/system/multi-user.target.wants/nyx-desktop.service
 
@@ -129,10 +129,10 @@ SVCEOF
               echo 'd /run/user/0 0700 root root -' > /tmp/nyx-iso-build/airootfs/etc/tmpfiles.d/nyx-runtime.conf
 
               cat << 'EOF' > /tmp/nyx-iso-build/airootfs/etc/systemd/system/getty@tty1.service.d/autologin.conf
-[Service]
-ExecStart=
-ExecStart=-/sbin/agetty --autologin root --noclear %I \$TERM
-EOF
+              [Service]
+              ExecStart=
+              ExecStart=-/sbin/agetty --autologin root --noclear %I \$TERM
+              EOF
 
               echo '==> Assembling bootable ISO...'
               mkarchiso -v -w /tmp/nyx-iso-work -o /workspace/out /tmp/nyx-iso-build

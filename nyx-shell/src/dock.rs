@@ -51,8 +51,9 @@ pub fn view<'a>(state: &DockState, theme: &NyxTheme) -> Element<'a, DockMessage>
     
     // Start Button (Mac/Windows hybrid style)
     let start_theme = theme.clone();
+    let logo_color = colors.text_primary;
     let start_btn = button(
-        container(text("🌌").size(32.0)).center_x(Length::Fixed(52.0)).center_y(Length::Fixed(52.0))
+        container(crate::icon::render_system_icon("nyx-logo", 24.0, logo_color)).center_x(Length::Fixed(52.0)).center_y(Length::Fixed(52.0))
     )
     .padding(Padding::from([2.0, 2.0]))
     .on_press(DockMessage::ToggleStartMenu)

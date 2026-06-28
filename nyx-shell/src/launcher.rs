@@ -160,7 +160,7 @@ pub fn view<'a>(state: &LauncherState, theme: &'a NyxTheme) -> Element<'a, Launc
 
         let item_btn = button(
             row![
-                text(item.icon.clone()).size(20.0),
+                crate::icon::render_system_icon(&item.icon, 16.0, colors.text_secondary),
                 column![
                     text(item.name.clone()).size(Typography::SIZE_BODY_SM).color(colors.text_primary),
                     text(item.path.clone()).size(Typography::SIZE_CAPTION).color(colors.text_tertiary),
@@ -208,7 +208,20 @@ pub fn view<'a>(state: &LauncherState, theme: &'a NyxTheme) -> Element<'a, Launc
         row![
             // User Avatar & Name
             row![
-                text(state.user_avatar.clone()).size(24.0),
+                container(
+                    text("SG")
+                        .size(Typography::SIZE_CAPTION)
+                        .color(colors.text_on_accent)
+                )
+                .width(Length::Fixed(28.0))
+                .height(Length::Fixed(28.0))
+                .align_x(Alignment::Center)
+                .align_y(Alignment::Center)
+                .style(move |_t| iced::widget::container::Style {
+                    background: Some(Background::Color(colors.accent)),
+                    border: Border { radius: Radii::FULL.into(), ..Border::default() },
+                    ..Default::default()
+                }),
                 text(state.user_name.clone()).size(Typography::SIZE_BODY_SM).color(colors.text_primary),
             ]
             .spacing(Spacing::SM)
@@ -217,15 +230,15 @@ pub fn view<'a>(state: &LauncherState, theme: &'a NyxTheme) -> Element<'a, Launc
             Space::new().width(Length::Fill),
             
             // Power Button
-            button(text("⚙️").size(18.0))
+            button(crate::icon::render_system_icon("settings", 16.0, colors.text_secondary))
                 .padding(Spacing::XS)
                 .on_press(LauncherMessage::PowerAction("settings".into()))
                 .style(move |_t, _s| ghost_btn(colors.text_secondary)),
-            button(text("🔒").size(18.0))
+            button(crate::icon::render_system_icon("lock", 16.0, colors.text_secondary))
                 .padding(Spacing::XS)
                 .on_press(LauncherMessage::PowerAction("lock".into()))
                 .style(move |_t, _s| ghost_btn(colors.text_secondary)),
-            button(text("⏻").size(18.0))
+            button(crate::icon::render_system_icon("power", 16.0, colors.error))
                 .padding(Spacing::XS)
                 .on_press(LauncherMessage::PowerAction("shutdown".into()))
                 .style(move |_t, _s| ghost_btn(colors.error)),
@@ -248,7 +261,7 @@ pub fn view<'a>(state: &LauncherState, theme: &'a NyxTheme) -> Element<'a, Launc
     let cpu_widget = container(
         column![
             row![
-                text("💻").size(16.0),
+                crate::icon::render_system_icon("cpu", 16.0, colors.accent),
                 text("CPU Usage").size(Typography::SIZE_BODY_SM).color(colors.text_primary),
             ].spacing(Spacing::XS).align_y(Alignment::Center),
             Space::new().height(Length::Fixed(4.0)),
@@ -271,7 +284,7 @@ pub fn view<'a>(state: &LauncherState, theme: &'a NyxTheme) -> Element<'a, Launc
     let ram_widget = container(
         column![
             row![
-                text("📊").size(16.0),
+                crate::icon::render_system_icon("ram", 16.0, colors.accent),
                 text("RAM Memory").size(Typography::SIZE_BODY_SM).color(colors.text_primary),
             ].spacing(Spacing::XS).align_y(Alignment::Center),
             Space::new().height(Length::Fixed(4.0)),
@@ -295,7 +308,7 @@ pub fn view<'a>(state: &LauncherState, theme: &'a NyxTheme) -> Element<'a, Launc
     let weather_widget = container(
         column![
             row![
-                text("☀️").size(24.0),
+                crate::icon::render_system_icon("weather-sun", 24.0, colors.accent),
                 column![
                     text("Seattle").size(Typography::SIZE_BODY_SM).color(colors.text_primary),
                     text("Sunny").size(Typography::SIZE_CAPTION).color(colors.text_secondary),
@@ -411,8 +424,8 @@ fn default_apps() -> Vec<AppEntry> {
 
 fn default_recents() -> Vec<RecentFile> {
     vec![
-        RecentFile { name: "Project Draft.md".into(), path: "~/Documents/".into(), icon: "📄".into(), time: "5m ago".into() },
-        RecentFile { name: "wallpaper.png".into(), path: "~/Pictures/".into(), icon: "🖼️".into(), time: "1h ago".into() },
-        RecentFile { name: "build-iso.yml".into(), path: "~/.github/workflows/".into(), icon: "⚙️".into(), time: "Yesterday".into() },
+        RecentFile { name: "Project Draft.md".into(), path: "~/Documents/".into(), icon: "doc".into(), time: "5m ago".into() },
+        RecentFile { name: "wallpaper.png".into(), path: "~/Pictures/".into(), icon: "img".into(), time: "1h ago".into() },
+        RecentFile { name: "build-iso.yml".into(), path: "~/.github/workflows/".into(), icon: "config".into(), time: "Yesterday".into() },
     ]
 }

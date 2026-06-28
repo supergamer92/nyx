@@ -22,10 +22,18 @@ jobs:
         run: |
           docker run --rm --privileged \
             -v "${{ github.workspace }}:/workspace" \
+            -v /dev:/dev \
             -w /workspace \
             archlinux:latest \
             /bin/bash -c "
               set -ex
+              echo '==> Creating loop devices if needed...'
+              for i in \$(seq 0 15); do
+                if [ ! -b /dev/loop\$i ]; then
+                  mknod -m 660 /dev/loop\$i b 7 \$i || true
+                fi
+              done
+              
               echo '==> Updating pacman keys & upgrading keyring...'
               pacman -Sy --noconfirm archlinux-keyring || true
               pacman-key --init || true

@@ -41,7 +41,6 @@ mesa
 vulkan-icd-loader
 vulkan-mesa-layers
 libva-mesa-driver
-mesa-vdpau
 xf86-video-amdgpu
 wayland
 wayland-protocols

@@ -65,7 +65,7 @@ pub fn view<'a>(state: &DockState, theme: &NyxTheme) -> Element<'a, DockMessage>
         ButtonStyle {
             background: bg,
             text_color: start_theme.colors.accent,
-            border: Border { color: Color::TRANSPARENT, width: 0.0, radius: Radii::LG.into() },
+            border: Border { color: Color::TRANSPARENT, width: 0.0, radius: Radii::FULL.into() },
             shadow: iced::Shadow::default(),
             snap: false,
         }
@@ -106,7 +106,7 @@ pub fn view<'a>(state: &DockState, theme: &NyxTheme) -> Element<'a, DockMessage>
                 Status::Hovered => Some(Background::Color(Color::from_rgba(1.0, 1.0, 1.0, 0.1))),
                 Status::Pressed => Some(Background::Color(Color::from_rgba(1.0, 1.0, 1.0, 0.15))),
             };
-            ButtonStyle { background: bg, text_color: tc.colors.text_primary, border: Border { color: Color::TRANSPARENT, width: 0.0, radius: Radii::LG.into() }, shadow: iced::Shadow::default(), snap: false }
+            ButtonStyle { background: bg, text_color: tc.colors.text_primary, border: Border { color: Color::TRANSPARENT, width: 0.0, radius: Radii::FULL.into() }, shadow: iced::Shadow::default(), snap: false }
         });
 
         let dot_color = if is_focused { colors.accent } else { colors.text_tertiary };
@@ -129,15 +129,15 @@ pub fn view<'a>(state: &DockState, theme: &NyxTheme) -> Element<'a, DockMessage>
     let dock_bg = colors.dock_bg;
     let dock_border = colors.border;
     let dock_container = container(
-        container(dock_row).padding(Padding::from([Spacing::XS, Spacing::MD]))
+        container(dock_row).padding(Padding::from([Spacing::SM, Spacing::LG]))
             .style(move |_t: &Theme| iced::widget::container::Style {
                 background: Some(Background::Color(dock_bg)),
-                border: Border { color: dock_border, width: 1.0, radius: Radii::XL.into() },
+                border: Border { color: dock_border, width: 1.0, radius: Radii::FULL.into() },
                 text_color: None,
-                shadow: iced::Shadow { color: Color::from_rgba(0.0, 0.0, 0.0, 0.25), offset: iced::Vector::new(0.0, 4.0), blur_radius: 20.0 },
+                shadow: iced::Shadow { color: Color::from_rgba(0.0, 0.0, 0.0, 0.35), offset: iced::Vector::new(0.0, 16.0), blur_radius: 48.0 },
                 snap: false,
             })
-    ).width(Length::Fill).center_x(Length::Fill).padding(Padding::from(Spacing::XS));
+    ).width(Length::Fill).center_x(Length::Fill).padding(Padding { top: 0.0, right: 0.0, bottom: Spacing::MD, left: 0.0 });
 
     dock_container.into()
 }

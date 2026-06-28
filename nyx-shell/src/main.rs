@@ -128,10 +128,10 @@ impl NyxShell {
         use iced::Radians;
 
         let grad = Linear::new(Radians(0.785))
-            .add_stop(0.0, nyx_widgets::theme::hex("#050512")) // Deep near-black cosmic blue
-            .add_stop(0.4, nyx_widgets::theme::hex("#14062d")) // Nebula violet
-            .add_stop(0.8, nyx_widgets::theme::hex("#061730")) // Deep electric blue
-            .add_stop(1.0, nyx_widgets::theme::hex("#020813")); // Deep space black
+            .add_stop(0.0, nyx_widgets::theme::hex("#0f0c29")) // Deep purple
+            .add_stop(0.4, nyx_widgets::theme::hex("#302b63")) // Vibrant indigo
+            .add_stop(0.8, nyx_widgets::theme::hex("#24243e")) // Dark slate
+            .add_stop(1.0, nyx_widgets::theme::hex("#12121e")); // Deep edge
 
         let wallpaper = container(
             column![

@@ -52,24 +52,24 @@ impl ColorPalette {
     /// Dark theme — true dark with OLED-friendly deep blacks
     pub fn dark() -> Self {
         Self {
-            // Backgrounds — deep, warm-tinted blacks
-            bg_base: hex("#0a0a0c"),
-            bg_surface: hex("#141418"),
-            bg_elevated: hex("#1c1c22"),
-            bg_overlay: Color::from_rgba(0.0, 0.0, 0.0, 0.6),
+            // Backgrounds — deep, translucent for glassmorphism
+            bg_base: Color::from_rgba(0.04, 0.04, 0.06, 0.80),
+            bg_surface: Color::from_rgba(0.08, 0.08, 0.10, 0.65),
+            bg_elevated: Color::from_rgba(0.12, 0.12, 0.15, 0.75),
+            bg_overlay: Color::from_rgba(0.0, 0.0, 0.0, 0.4),
 
             // Text — crisp whites with opacity hierarchy
-            text_primary: hex("#f0f0f3"),
-            text_secondary: hex("#a0a0ab"),
-            text_tertiary: hex("#6b6b78"),
-            text_disabled: hex("#45454f"),
+            text_primary: hex("#ffffff"),
+            text_secondary: hex("#b0b0bc"),
+            text_tertiary: hex("#7a7a88"),
+            text_disabled: hex("#555562"),
             text_on_accent: hex("#ffffff"),
 
             // Accent — vibrant indigo-purple
-            accent: hex("#7c5cfc"),
-            accent_hover: hex("#8e72ff"),
-            accent_pressed: hex("#6a48e0"),
-            accent_subtle: Color::from_rgba(0.486, 0.361, 0.988, 0.15),
+            accent: hex("#8a6dfd"),
+            accent_hover: hex("#9f85ff"),
+            accent_pressed: hex("#7453e8"),
+            accent_subtle: Color::from_rgba(0.54, 0.43, 0.99, 0.20),
 
             // Semantic
             success: hex("#34d399"),
@@ -77,14 +77,14 @@ impl ColorPalette {
             error: hex("#f87171"),
             info: hex("#60a5fa"),
 
-            // Borders
-            border: hex("#2a2a32"),
-            border_focused: hex("#7c5cfc"),
-            divider: hex("#1e1e26"),
+            // Borders (soft and subtle)
+            border: Color::from_rgba(1.0, 1.0, 1.0, 0.08),
+            border_focused: hex("#8a6dfd"),
+            divider: Color::from_rgba(1.0, 1.0, 1.0, 0.05),
 
-            // Panels — semi-transparent for blur effect
-            panel_bg: Color::from_rgba(0.08, 0.08, 0.1, 0.85),
-            dock_bg: Color::from_rgba(0.1, 0.1, 0.12, 0.8),
+            // Panels — highly translucent for blur effect (acrylic)
+            panel_bg: Color::from_rgba(0.08, 0.08, 0.1, 0.45),
+            dock_bg: Color::from_rgba(0.06, 0.06, 0.08, 0.55),
         }
     }
 
@@ -219,36 +219,36 @@ impl Shadow {
     pub fn sm() -> Self {
         Self {
             offset_x: 0.0,
-            offset_y: 1.0,
-            blur_radius: 3.0,
-            color: Color::from_rgba(0.0, 0.0, 0.0, 0.08),
+            offset_y: 2.0,
+            blur_radius: 6.0,
+            color: Color::from_rgba(0.0, 0.0, 0.0, 0.15),
         }
     }
 
     pub fn md() -> Self {
         Self {
             offset_x: 0.0,
-            offset_y: 4.0,
-            blur_radius: 12.0,
-            color: Color::from_rgba(0.0, 0.0, 0.0, 0.12),
+            offset_y: 8.0,
+            blur_radius: 24.0,
+            color: Color::from_rgba(0.0, 0.0, 0.0, 0.25),
         }
     }
 
     pub fn lg() -> Self {
         Self {
             offset_x: 0.0,
-            offset_y: 8.0,
-            blur_radius: 32.0,
-            color: Color::from_rgba(0.0, 0.0, 0.0, 0.16),
+            offset_y: 16.0,
+            blur_radius: 48.0,
+            color: Color::from_rgba(0.0, 0.0, 0.0, 0.35),
         }
     }
 
     pub fn xl() -> Self {
         Self {
             offset_x: 0.0,
-            offset_y: 16.0,
-            blur_radius: 48.0,
-            color: Color::from_rgba(0.0, 0.0, 0.0, 0.2),
+            offset_y: 24.0,
+            blur_radius: 64.0,
+            color: Color::from_rgba(0.0, 0.0, 0.0, 0.45),
         }
     }
 }

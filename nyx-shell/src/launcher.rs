@@ -125,7 +125,7 @@ pub fn view<'a>(state: &LauncherState, theme: &'a NyxTheme) -> Element<'a, Launc
             ButtonStyle {
                 background: bg,
                 text_color: tc.colors.text_primary,
-                border: Border { color: Color::TRANSPARENT, width: 0.0, radius: Radii::MD.into() },
+                border: Border { color: Color::TRANSPARENT, width: 0.0, radius: Radii::LG.into() },
                 shadow: iced::Shadow::default(),
                 snap: false,
             }
@@ -183,7 +183,7 @@ pub fn view<'a>(state: &LauncherState, theme: &'a NyxTheme) -> Element<'a, Launc
             ButtonStyle {
                 background: bg,
                 text_color: tc.colors.text_primary,
-                border: Border { color: Color::TRANSPARENT, width: 0.0, radius: Radii::MD.into() },
+                border: Border { color: Color::TRANSPARENT, width: 0.0, radius: Radii::LG.into() },
                 shadow: iced::Shadow::default(),
                 snap: false,
             }
@@ -236,7 +236,7 @@ pub fn view<'a>(state: &LauncherState, theme: &'a NyxTheme) -> Element<'a, Launc
     .width(Length::Fill)
     .style(move |_t: &Theme| iced::widget::container::Style {
         background: Some(Background::Color(footer_bg)),
-        border: Border { color: divider, width: 0.0, radius: Radii::LG.into() },
+        border: Border { color: divider, width: 0.0, radius: Radii::XL.into() },
         ..Default::default()
     });
 
@@ -263,7 +263,7 @@ pub fn view<'a>(state: &LauncherState, theme: &'a NyxTheme) -> Element<'a, Launc
     .padding(Spacing::SM)
     .style(move |_t| iced::widget::container::Style {
         background: Some(Background::Color(widget_bg)),
-        border: Border { color: widget_border, width: 1.0, radius: Radii::MD.into() },
+        border: Border { color: widget_border, width: 1.0, radius: Radii::LG.into() },
         ..Default::default()
     });
 
@@ -286,7 +286,7 @@ pub fn view<'a>(state: &LauncherState, theme: &'a NyxTheme) -> Element<'a, Launc
     .padding(Spacing::SM)
     .style(move |_t| iced::widget::container::Style {
         background: Some(Background::Color(widget_bg)),
-        border: Border { color: widget_border, width: 1.0, radius: Radii::MD.into() },
+        border: Border { color: widget_border, width: 1.0, radius: Radii::LG.into() },
         ..Default::default()
     });
 
@@ -310,7 +310,7 @@ pub fn view<'a>(state: &LauncherState, theme: &'a NyxTheme) -> Element<'a, Launc
     .width(Length::Fill)
     .style(move |_t| iced::widget::container::Style {
         background: Some(Background::Color(weather_accent)),
-        border: Border { color: colors.accent, width: 1.0, radius: Radii::MD.into() },
+        border: Border { color: colors.accent, width: 1.0, radius: Radii::LG.into() },
         ..Default::default()
     });
 
@@ -373,9 +373,9 @@ pub fn view<'a>(state: &LauncherState, theme: &'a NyxTheme) -> Element<'a, Launc
                 border: Border { color: card_border, width: 1.0, radius: Radii::XL.into() },
                 text_color: None,
                 shadow: iced::Shadow {
-                    color: Color::from_rgba(0.0, 0.0, 0.0, 0.45),
-                    offset: iced::Vector::new(0.0, 16.0),
-                    blur_radius: 48.0,
+                    color: Color::from_rgba(0.0, 0.0, 0.0, 0.65),
+                    offset: iced::Vector::new(0.0, 32.0),
+                    blur_radius: 80.0,
                 },
                 snap: false,
             })

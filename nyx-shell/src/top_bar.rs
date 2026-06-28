@@ -33,12 +33,12 @@ fn btn_style(theme: &NyxTheme, status: Status) -> ButtonStyle {
     let colors = &theme.colors;
     let (bg, tc) = match status {
         Status::Active | Status::Disabled => (None, colors.text_primary),
-        Status::Hovered => (Some(Background::Color(Color::from_rgba(1.0, 1.0, 1.0, 0.08))), colors.text_primary),
-        Status::Pressed => (Some(Background::Color(Color::from_rgba(1.0, 1.0, 1.0, 0.12))), colors.text_primary),
+        Status::Hovered => (Some(Background::Color(Color::from_rgba(1.0, 1.0, 1.0, 0.12))), colors.text_primary),
+        Status::Pressed => (Some(Background::Color(Color::from_rgba(1.0, 1.0, 1.0, 0.18))), colors.text_primary),
     };
     ButtonStyle {
         background: bg, text_color: tc,
-        border: Border { color: Color::TRANSPARENT, width: 0.0, radius: Radii::SM.into() },
+        border: Border { color: Color::TRANSPARENT, width: 0.0, radius: Radii::FULL.into() },
         shadow: iced::Shadow::default(), snap: false,
     }
 }
@@ -52,8 +52,8 @@ pub fn view<'a>(state: &TopBarState, clock: &str, theme: &NyxTheme) -> Element<'
         .style(move |_t: &Theme, s: Status| btn_style(&t1, s));
 
     let t2 = theme.clone();
-    let center = button(text(clock.to_string()).size(Typography::SIZE_BODY).color(colors.text_primary))
-        .padding(Padding::from([4.0, 12.0]))
+    let center = button(text(clock.to_string()).size(Typography::SIZE_BODY_SM).color(colors.text_primary))
+        .padding(Padding::from([6.0, 16.0]))
         .on_press(TopBarMessage::OpenNotifications)
         .style(move |_t: &Theme, s: Status| btn_style(&t2, s));
 
@@ -61,23 +61,34 @@ pub fn view<'a>(state: &TopBarState, clock: &str, theme: &NyxTheme) -> Element<'
     let vol = if state.volume > 0.5 { "🔊" } else if state.volume > 0.0 { "🔉" } else { "🔇" };
     let bat = if state.battery_percent > 50 { "🔋" } else { "🪫" };
     let dnd = if state.do_not_disturb { "🔕" } else { "" };
-    let tray = format!("{}{} {} {}%", dnd, wifi, vol, state.battery_percent);
+    let tray = format!("{}{} {} {} {}%", dnd, wifi, vol, bat, state.battery_percent);
 
     let t3 = theme.clone();
     let right = button(text(tray).size(Typography::SIZE_BODY_SM))
-        .padding(Padding::from([4.0, 12.0]))
+        .padding(Padding::from([6.0, 16.0]))
         .on_press(TopBarMessage::OpenControlCenter)
         .style(move |_t: &Theme, s: Status| btn_style(&t3, s));
 
     let bar = row![left, Space::new().width(Length::Fill), center, Space::new().width(Length::Fill), right]
-        .align_y(Alignment::Center).padding(Padding::from([0.0, Spacing::SM]));
+        .align_y(Alignment::Center).padding(Padding::from([4.0, 6.0]));
 
     let panel_bg = colors.panel_bg;
-    let border_color = colors.divider;
-    container(bar).width(Length::Fill).height(Length::Fixed(32.0))
+    let border_color = colors.border;
+    
+    let pill = container(bar)
+        .width(Length::Fill)
+        .height(Length::Fixed(40.0))
         .style(move |_t: &Theme| iced::widget::container::Style {
             background: Some(Background::Color(panel_bg)),
-            border: Border { color: border_color, width: 0.0, radius: 0.0.into() },
-            text_color: None, shadow: iced::Shadow::default(), snap: false,
-        }).into()
+            border: Border { color: border_color, width: 1.0, radius: Radii::FULL.into() },
+            text_color: None, 
+            shadow: iced::Shadow { 
+                color: Color::from_rgba(0.0, 0.0, 0.0, 0.25), 
+                offset: iced::Vector::new(0.0, 8.0), 
+                blur_radius: 24.0 
+            }, 
+            snap: false,
+        });
+
+    container(pill).padding(Padding::from([Spacing::SM, Spacing::LG])).into()
 }

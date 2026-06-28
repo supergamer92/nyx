@@ -34,11 +34,15 @@ jobs:
                 fi
               done
               
-              echo '==> Updating pacman keys & packages...'
-              pacman -Sy --noconfirm archlinux-keyring || true
+              echo '==> Initializing pacman keys...'
               pacman-key --init || true
               pacman-key --populate archlinux || true
-              pacman -Syu --noconfirm archiso git sudo rust cargo pkg-config wayland wayland-protocols libinput systemd mesa libxkbcommon pixman libseat
+              
+              echo '==> Upgrading keyring...'
+              pacman -Sy --noconfirm archlinux-keyring || true
+              
+              echo '==> Installing required system packages...'
+              pacman -Syu --noconfirm archiso git sudo rust pkg-config wayland wayland-protocols libinput systemd mesa libxkbcommon pixman seatd
               
               echo '==> Building Nyx compositor and shell binaries...'
               cargo build --release -p nyx-compositor -p nyx-shell -p nyx-settingsd -p nyx-hw -p nyx-updater

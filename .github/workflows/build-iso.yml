@@ -40,8 +40,8 @@ jobs:
               pacman-key --populate archlinux || true
               pacman -Syu --noconfirm archiso git sudo rust cargo pkg-config wayland wayland-protocols libinput systemd mesa libxkbcommon pixman
               
-              echo '==> Building Nyx binaries for live environment...'
-              cargo build --release -p nyx-shell -p nyx-settingsd -p nyx-hw -p nyx-updater
+              echo '==> Building Nyx compositor and shell binaries...'
+              cargo build --release -p nyx-compositor -p nyx-shell -p nyx-settingsd -p nyx-hw -p nyx-updater
               
               echo '==> Preparing ISO build environment...'
               mkdir -p /tmp/nyx-iso-build /workspace/out
@@ -52,25 +52,47 @@ jobs:
               
               echo '==> Installing Nyx binaries into live filesystem...'
               mkdir -p /tmp/nyx-iso-build/airootfs/usr/bin/
+              cp /workspace/target/release/nyx-compositor /tmp/nyx-iso-build/airootfs/usr/bin/
               cp /workspace/target/release/nyx-shell /tmp/nyx-iso-build/airootfs/usr/bin/
               cp /workspace/target/release/nyx-settingsd /tmp/nyx-iso-build/airootfs/usr/bin/
               cp /workspace/target/release/nyx-hw /tmp/nyx-iso-build/airootfs/usr/bin/
               cp /workspace/target/release/nyx-updater /tmp/nyx-iso-build/airootfs/usr/bin/
               
-              echo '==> Configuring automatic GUI desktop boot (graphical.target)...'
+              # Set execution permissions
+              chmod +x /tmp/nyx-iso-build/airootfs/usr/bin/nyx-*
+              
+              echo '==> Creating Desktop startup launcher...'
+              cat << 'EOF' > /tmp/nyx-iso-build/airootfs/usr/bin/nyx-start-desktop
+          #!/bin/bash
+          # Start settings daemon
+          /usr/bin/nyx-settingsd &
+          
+          # Start compositor in the background
+          /usr/bin/nyx-compositor &
+          
+          # Wait for Wayland display socket to initialize
+          sleep 1.5
+          
+          # Run the Shell UI
+          export WAYLAND_DISPLAY=wayland-0
+          exec /usr/bin/nyx-shell
+          EOF
+              chmod +x /tmp/nyx-iso-build/airootfs/usr/bin/nyx-start-desktop
+              
+              echo '==> Configuring automatic GUI desktop boot service...'
               mkdir -p /tmp/nyx-iso-build/airootfs/etc/systemd/system/multi-user.target.wants/
               mkdir -p /tmp/nyx-iso-build/airootfs/etc/systemd/system/getty@tty1.service.d/
               
               cat << 'EOF' > /tmp/nyx-iso-build/airootfs/etc/systemd/system/nyx-desktop.service
           [Unit]
-          Description=Nyx OS Desktop Shell
+          Description=Nyx OS Desktop GUI Session
           After=network.target sound.target
 
           [Service]
           Type=simple
           User=root
-          Environment=WAYLAND_DISPLAY=wayland-0
-          ExecStart=/usr/bin/nyx-shell
+          WorkingDirectory=/root
+          ExecStart=/usr/bin/nyx-start-desktop
           Restart=always
 
           [Install]

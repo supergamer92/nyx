@@ -18,7 +18,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Build ISO inside Arch Linux Container
+      - name: Setup Rust toolchain inside Arch container to compile binaries for ISO
         run: |
           docker run --rm --privileged \
             -v "${{ github.workspace }}:/workspace" \
@@ -27,38 +27,65 @@ jobs:
             archlinux:latest \
             /bin/bash -c "
               set -ex
-              echo '==> Creating loop devices if needed...'
+              echo '==> Initializing loop devices...'
               for i in \$(seq 0 15); do
                 if [ ! -b /dev/loop\$i ]; then
                   mknod -m 660 /dev/loop\$i b 7 \$i || true
                 fi
               done
               
-              echo '==> Updating pacman keys & upgrading keyring...'
+              echo '==> Updating pacman keys & packages...'
               pacman -Sy --noconfirm archlinux-keyring || true
               pacman-key --init || true
               pacman-key --populate archlinux || true
-              pacman -Syu --noconfirm archiso git sudo
+              pacman -Syu --noconfirm archiso git sudo rust cargo pkg-config wayland wayland-protocols libinput systemd mesa libxkbcommon pixman
               
-              echo '==> Preparing build environment...'
+              echo '==> Building Nyx binaries for live environment...'
+              cargo build --release -p nyx-shell -p nyx-settingsd -p nyx-hw -p nyx-updater
+              
+              echo '==> Preparing ISO build environment...'
               mkdir -p /tmp/nyx-iso-build /workspace/out
               cp -r /usr/share/archiso/configs/releng/* /tmp/nyx-iso-build/
               
-              echo '==> Applying Nyx packages...'
+              echo '==> Applying Nyx base package list...'
               grep -v '^#' /workspace/nyx-base/packages.txt | grep -v '^$' >> /tmp/nyx-iso-build/packages.x86_64
               
-              if [ -d '/workspace/nyx-iso/airootfs' ]; then
-                cp -r /workspace/nyx-iso/airootfs/* /tmp/nyx-iso-build/airootfs/
-              fi
+              echo '==> Installing Nyx binaries into live filesystem...'
+              mkdir -p /tmp/nyx-iso-build/airootfs/usr/bin/
+              cp /workspace/target/release/nyx-shell /tmp/nyx-iso-build/airootfs/usr/bin/
+              cp /workspace/target/release/nyx-settingsd /tmp/nyx-iso-build/airootfs/usr/bin/
+              cp /workspace/target/release/nyx-hw /tmp/nyx-iso-build/airootfs/usr/bin/
+              cp /workspace/target/release/nyx-updater /tmp/nyx-iso-build/airootfs/usr/bin/
               
+              echo '==> Configuring automatic GUI desktop boot (graphical.target)...'
+              mkdir -p /tmp/nyx-iso-build/airootfs/etc/systemd/system/multi-user.target.wants/
               mkdir -p /tmp/nyx-iso-build/airootfs/etc/systemd/system/getty@tty1.service.d/
+              
+              cat << 'EOF' > /tmp/nyx-iso-build/airootfs/etc/systemd/system/nyx-desktop.service
+          [Unit]
+          Description=Nyx OS Desktop Shell
+          After=network.target sound.target
+
+          [Service]
+          Type=simple
+          User=root
+          Environment=WAYLAND_DISPLAY=wayland-0
+          ExecStart=/usr/bin/nyx-shell
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
+          EOF
+
+              ln -sf /etc/systemd/system/nyx-desktop.service /tmp/nyx-iso-build/airootfs/etc/systemd/system/multi-user.target.wants/nyx-desktop.service
+
               cat << 'EOF' > /tmp/nyx-iso-build/airootfs/etc/systemd/system/getty@tty1.service.d/autologin.conf
           [Service]
           ExecStart=
           ExecStart=-/sbin/agetty --autologin root --noclear %I \$TERM
           EOF
 
-              echo '==> Building ISO via mkarchiso...'
+              echo '==> Assembling bootable ISO...'
               mkarchiso -v -w /tmp/nyx-iso-work -o /workspace/out /tmp/nyx-iso-build
               
               echo '==> Build completed successfully!'

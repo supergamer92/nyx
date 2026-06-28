@@ -104,7 +104,7 @@ pub fn view<'a>(state: &LauncherState, theme: &'a NyxTheme) -> Element<'a, Launc
 
         let app_btn = button(
             row![
-                container(text(app.icon.clone()).size(24.0)).padding(Spacing::XXS),
+                crate::icon::render_app_icon(&app.id, 32.0),
                 column![
                     text(app.name.clone()).size(Typography::SIZE_BODY_SM).color(colors.text_primary),
                     text(app.category.clone()).size(Typography::SIZE_CAPTION).color(colors.text_tertiary),

@@ -96,7 +96,7 @@ pub fn view<'a>(state: &DockState, theme: &NyxTheme) -> Element<'a, DockMessage>
         let icon_size = if is_hovered { 42.0 } else { 36.0 };
 
         let icon_btn = button(
-            container(text(item.icon.clone()).size(icon_size)).center_x(Length::Fixed(52.0)).center_y(Length::Fixed(52.0))
+            container(crate::icon::render_app_icon(&item.id, icon_size)).center_x(Length::Fixed(52.0)).center_y(Length::Fixed(52.0))
         )
         .padding(Padding::from([2.0, 2.0]))
         .on_press(DockMessage::ClickItem(item_id))

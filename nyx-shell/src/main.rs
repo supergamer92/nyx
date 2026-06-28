@@ -5,6 +5,7 @@ mod dock;
 mod launcher;
 mod notifications;
 mod control_center;
+mod icon;
 
 use iced::{
     Element, Length, Theme, Subscription, Color,

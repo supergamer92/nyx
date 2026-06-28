@@ -240,14 +240,121 @@ pub fn view<'a>(state: &LauncherState, theme: &'a NyxTheme) -> Element<'a, Launc
         ..Default::default()
     });
 
-    // ── Assemble Start Menu Layout ──
-    let content = column![
+    // ── Right Side Panel: System Widgets & Weather ──
+    let widget_bg = colors.bg_surface;
+    let widget_border = colors.border;
+    
+    // CPU Widget
+    let cpu_widget = container(
+        column![
+            row![
+                text("💻").size(16.0),
+                text("CPU Usage").size(Typography::SIZE_BODY_SM).color(colors.text_primary),
+            ].spacing(Spacing::XS).align_y(Alignment::Center),
+            Space::new().height(Length::Fixed(4.0)),
+            nyx_widgets::progress::nyx_progress_bar(24.0, theme),
+            row![
+                text("2.8 GHz").size(Typography::SIZE_CAPTION).color(colors.text_tertiary),
+                Space::new().width(Length::Fill),
+                text("24%").size(Typography::SIZE_CAPTION).color(colors.accent),
+            ].align_y(Alignment::Center),
+        ].spacing(4.0)
+    )
+    .padding(Spacing::SM)
+    .style(move |_t| iced::widget::container::Style {
+        background: Some(Background::Color(widget_bg)),
+        border: Border { color: widget_border, width: 1.0, radius: Radii::MD.into() },
+        ..Default::default()
+    });
+
+    // RAM Widget
+    let ram_widget = container(
+        column![
+            row![
+                text("📊").size(16.0),
+                text("RAM Memory").size(Typography::SIZE_BODY_SM).color(colors.text_primary),
+            ].spacing(Spacing::XS).align_y(Alignment::Center),
+            Space::new().height(Length::Fixed(4.0)),
+            nyx_widgets::progress::nyx_progress_bar(32.0, theme),
+            row![
+                text("5.1 / 16.0 GB").size(Typography::SIZE_CAPTION).color(colors.text_tertiary),
+                Space::new().width(Length::Fill),
+                text("32%").size(Typography::SIZE_CAPTION).color(colors.accent),
+            ].align_y(Alignment::Center),
+        ].spacing(4.0)
+    )
+    .padding(Spacing::SM)
+    .style(move |_t| iced::widget::container::Style {
+        background: Some(Background::Color(widget_bg)),
+        border: Border { color: widget_border, width: 1.0, radius: Radii::MD.into() },
+        ..Default::default()
+    });
+
+    // Weather Widget (Vibrant Accent Color card)
+    let weather_accent = colors.accent_subtle;
+    let weather_widget = container(
+        column![
+            row![
+                text("☀️").size(24.0),
+                column![
+                    text("Seattle").size(Typography::SIZE_BODY_SM).color(colors.text_primary),
+                    text("Sunny").size(Typography::SIZE_CAPTION).color(colors.text_secondary),
+                ].spacing(2.0),
+            ].spacing(Spacing::SM).align_y(Alignment::Center),
+            Space::new().height(Length::Fill),
+            text("72°F").size(28.0).color(colors.accent),
+        ]
+    )
+    .padding(Spacing::SM)
+    .height(Length::Fixed(100.0))
+    .width(Length::Fill)
+    .style(move |_t| iced::widget::container::Style {
+        background: Some(Background::Color(weather_accent)),
+        border: Border { color: colors.accent, width: 1.0, radius: Radii::MD.into() },
+        ..Default::default()
+    });
+
+    let right_panel = column![
+        text("System Dashboard")
+            .size(Typography::SIZE_BODY_SM)
+            .color(colors.text_secondary),
+        Space::new().height(Length::Fixed(Spacing::XS)),
+        cpu_widget,
+        ram_widget,
+        weather_widget,
+    ]
+    .spacing(Spacing::SM)
+    .width(Length::Fixed(180.0));
+
+    // ── Left Side Panel: Search + Apps + Recents ──
+    let left_panel = column![
         search,
-        Space::new().height(Length::Fixed(Spacing::MD)),
+        Space::new().height(Length::Fixed(Spacing::SM)),
         apps_section,
-        Space::new().height(Length::Fixed(Spacing::MD)),
+        Space::new().height(Length::Fixed(Spacing::SM)),
         recents_section,
-        Space::new().height(Length::Fill),
+    ]
+    .spacing(Spacing::XS)
+    .width(Length::Fill);
+
+    // ── Assemble Start Menu Layout ──
+    let dashboard = row![
+        left_panel,
+        container(Space::new().width(Length::Fixed(1.0)).height(Length::Fill))
+            .style(move |_t| iced::widget::container::Style {
+                background: Some(Background::Color(colors.divider)),
+                ..Default::default()
+            })
+            .padding(Padding::from([0.0, Spacing::XS])),
+        right_panel,
+    ]
+    .spacing(Spacing::XS)
+    .width(Length::Fill)
+    .height(Length::Fill);
+
+    let content = column![
+        dashboard,
+        Space::new().height(Length::Fixed(Spacing::SM)),
         footer,
     ]
     .spacing(Spacing::XS);
@@ -258,8 +365,8 @@ pub fn view<'a>(state: &LauncherState, theme: &'a NyxTheme) -> Element<'a, Launc
 
     container(
         container(content)
-            .width(Length::Fixed(600.0))
-            .height(Length::Fixed(550.0))
+            .width(Length::Fixed(720.0)) // Widened to fit dashboard comfortably
+            .height(Length::Fixed(560.0))
             .padding(Spacing::MD)
             .style(move |_t: &Theme| iced::widget::container::Style {
                 background: Some(Background::Color(card_bg)),

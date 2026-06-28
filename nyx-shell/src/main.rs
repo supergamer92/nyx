@@ -123,18 +123,27 @@ impl NyxShell {
         let top = top_bar::view(&self.top_bar, &self.clock_text, theme);
 
         // Layer 0: Desktop Wallpaper & centered text
+        use iced::gradient::{Gradient, Linear};
+        use iced::Radians;
+
+        let grad = Linear::new(Radians(0.785))
+            .add_stop(0.0, nyx_widgets::theme::hex("#050512")) // Deep near-black cosmic blue
+            .add_stop(0.4, nyx_widgets::theme::hex("#14062d")) // Nebula violet
+            .add_stop(0.8, nyx_widgets::theme::hex("#061730")) // Deep electric blue
+            .add_stop(1.0, nyx_widgets::theme::hex("#020813")); // Deep space black
+
         let wallpaper = container(
             column![
                 Space::new().height(Length::Fill),
-                container(text("Nyx OS").size(48.0).color(Color::from_rgba(1.0, 1.0, 1.0, 0.15))).center_x(Length::Fill),
-                container(text("v0.1.0-dev").size(16.0).color(Color::from_rgba(1.0, 1.0, 1.0, 0.08))).center_x(Length::Fill),
+                container(text("Nyx OS").size(64.0).color(Color::from_rgba(1.0, 1.0, 1.0, 0.08))).center_x(Length::Fill),
+                container(text("v0.1.0-dev").size(16.0).color(Color::from_rgba(1.0, 1.0, 1.0, 0.04))).center_x(Length::Fill),
                 Space::new().height(Length::Fill),
             ]
         )
         .width(Length::Fill)
         .height(Length::Fill)
-        .style(|_theme: &Theme| iced::widget::container::Style {
-            background: Some(iced::Background::Color(nyx_widgets::theme::hex("#0f0f14"))),
+        .style(move |_theme: &Theme| iced::widget::container::Style {
+            background: Some(iced::Background::Gradient(Gradient::Linear(grad))),
             ..Default::default()
         });
 

@@ -53,6 +53,7 @@ jobs:
               echo '==> Preparing ISO build environment...'
               mkdir -p /tmp/nyx-iso-build /workspace/out
               cp -r /usr/share/archiso/configs/releng/* /tmp/nyx-iso-build/
+              cp /workspace/nyx-iso/profiledef.sh /tmp/nyx-iso-build/
               
               echo '==> Applying Nyx base package list...'
               grep -v '^#' /workspace/nyx-base/packages.txt | grep -v '^$' >> /tmp/nyx-iso-build/packages.x86_64

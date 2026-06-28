@@ -38,16 +38,54 @@ impl DockState {
             }
             DockMessage::HoverItem(i) => { self.hovered_index = Some(i); }
             DockMessage::UnhoverItem => { self.hovered_index = None; }
+            DockMessage::ToggleStartMenu => {}
         }
     }
 }
 
 #[derive(Debug, Clone)]
-pub enum DockMessage { ClickItem(String), HoverItem(usize), UnhoverItem }
+pub enum DockMessage { ClickItem(String), HoverItem(usize), UnhoverItem, ToggleStartMenu }
 
 pub fn view<'a>(state: &DockState, theme: &NyxTheme) -> Element<'a, DockMessage> {
     let colors = &theme.colors;
-    let mut dock_row = row![].spacing(Spacing::XXS).align_y(Alignment::End);
+    
+    // Start Button (Mac/Windows hybrid style)
+    let start_theme = theme.clone();
+    let start_btn = button(
+        container(text("🌌").size(32.0)).center_x(Length::Fixed(52.0)).center_y(Length::Fixed(52.0))
+    )
+    .padding(Padding::from([2.0, 2.0]))
+    .on_press(DockMessage::ToggleStartMenu)
+    .style(move |_t: &Theme, status: Status| {
+        let bg = match status {
+            Status::Active | Status::Disabled => None,
+            Status::Hovered => Some(Background::Color(Color::from_rgba(start_theme.colors.accent.r, start_theme.colors.accent.g, start_theme.colors.accent.b, 0.15))),
+            Status::Pressed => Some(Background::Color(Color::from_rgba(start_theme.colors.accent.r, start_theme.colors.accent.g, start_theme.colors.accent.b, 0.3))),
+        };
+        ButtonStyle {
+            background: bg,
+            text_color: start_theme.colors.accent,
+            border: Border { color: Color::TRANSPARENT, width: 0.0, radius: Radii::LG.into() },
+            shadow: iced::Shadow::default(),
+            snap: false,
+        }
+    });
+
+    let start_col = iced::widget::column![start_btn]
+        .align_x(Alignment::Center)
+        .push(Space::new().width(Length::Fixed(5.0)).height(Length::Fixed(5.0)));
+
+    // Separator line
+    let sep_theme = theme.clone();
+    let sep = container(Space::new().width(Length::Fixed(1.0)).height(Length::Fixed(36.0)))
+        .style(move |_t| iced::widget::container::Style {
+            background: Some(Background::Color(sep_theme.colors.divider)),
+            ..Default::default()
+        })
+        .align_y(Alignment::Center)
+        .padding(Padding::from(Spacing::XS));
+
+    let mut dock_row = row![start_col, sep].spacing(Spacing::XXS).align_y(Alignment::End);
 
     for (i, item) in state.items.iter().enumerate() {
         let is_hovered = state.hovered_index == Some(i);

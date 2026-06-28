@@ -1,4 +1,7 @@
-//! # App Launcher — full-screen overlay with grid and search
+//! # Hybrid Start Menu / App Launcher
+//!
+//! A floating Windows 11/macOS hybrid Start Menu. Pops up above the bottom dock
+//! with search, pinned apps, recent items, and user profile/power actions.
 
 use iced::{
     widget::{button, column, container, row, text, text_input, scrollable, Space},
@@ -8,128 +11,301 @@ use iced::widget::button::{Status, Style as ButtonStyle};
 use nyx_widgets::theme::{NyxTheme, Spacing, Typography, Radii};
 
 #[derive(Debug, Clone)]
-pub struct AppEntry { pub id: String, pub name: String, pub icon: String, pub category: String, pub description: String }
+pub struct AppEntry {
+    pub id: String,
+    pub name: String,
+    pub icon: String,
+    pub category: String,
+}
 
-pub struct LauncherState { pub apps: Vec<AppEntry>, pub search_query: String, pub selected_category: String }
+#[derive(Debug, Clone)]
+pub struct RecentFile {
+    pub name: String,
+    pub path: String,
+    pub icon: String,
+    pub time: String,
+}
+
+pub struct LauncherState {
+    pub apps: Vec<AppEntry>,
+    pub recents: Vec<RecentFile>,
+    pub search_query: String,
+    pub user_name: String,
+    pub user_avatar: String,
+}
 
 impl LauncherState {
-    pub fn new() -> Self { Self { apps: default_apps(), search_query: String::new(), selected_category: "All".into() } }
+    pub fn new() -> Self {
+        Self {
+            apps: default_apps(),
+            recents: default_recents(),
+            search_query: String::new(),
+            user_name: "SuperGamer92".into(),
+            user_avatar: "👤".into(),
+        }
+    }
+
     pub fn update(&mut self, msg: LauncherMessage) {
         match msg {
-            LauncherMessage::SearchChanged(q) => { self.search_query = q; }
-            LauncherMessage::LaunchApp(id) => { tracing::info!("Launching: {}", id); }
-            LauncherMessage::SelectCategory(c) => { self.selected_category = c; }
+            LauncherMessage::SearchChanged(q) => {
+                self.search_query = q;
+            }
+            LauncherMessage::LaunchApp(id) => {
+                tracing::info!("Launching: {}", id);
+            }
+            LauncherMessage::OpenFile(path) => {
+                tracing::info!("Opening file: {}", path);
+            }
+            LauncherMessage::PowerAction(action) => {
+                tracing::info!("Power action: {}", action);
+            }
             LauncherMessage::Close => {}
         }
     }
+
     pub fn filtered_apps(&self) -> Vec<&AppEntry> {
         self.apps.iter().filter(|a| {
-            let ms = self.search_query.is_empty() || a.name.to_lowercase().contains(&self.search_query.to_lowercase());
-            let mc = self.selected_category == "All" || a.category == self.selected_category;
-            ms && mc
+            self.search_query.is_empty()
+                || a.name.to_lowercase().contains(&self.search_query.to_lowercase())
         }).collect()
     }
 }
 
 #[derive(Debug, Clone)]
-pub enum LauncherMessage { SearchChanged(String), LaunchApp(String), SelectCategory(String), Close }
+pub enum LauncherMessage {
+    SearchChanged(String),
+    LaunchApp(String),
+    OpenFile(String),
+    PowerAction(String),
+    Close,
+}
 
-pub fn view<'a>(state: &LauncherState, theme: &NyxTheme) -> Element<'a, LauncherMessage> {
+pub fn view<'a>(state: &LauncherState, theme: &'a NyxTheme) -> Element<'a, LauncherMessage> {
     let colors = &theme.colors;
 
+    // ── 1. Top Search Bar ──
     let search = container(
-        text_input("Search apps...", &state.search_query).on_input(LauncherMessage::SearchChanged).padding(Spacing::SM).size(Typography::SIZE_BODY_LG)
-    ).width(Length::Fixed(400.0)).center_x(Length::Fill);
+        text_input("Type to search apps, files, settings...", &state.search_query)
+            .on_input(LauncherMessage::SearchChanged)
+            .padding(Spacing::SM)
+            .size(Typography::SIZE_BODY)
+    )
+    .width(Length::Fill);
 
-    let categories = ["All", "System", "Productivity", "Media", "Utilities"];
-    let mut cat_row = row![].spacing(Spacing::XS);
-    for cat in &categories {
-        let is_active = state.selected_category == *cat;
-        let tc = theme.clone();
-        let cs = cat.to_string();
-        let btn = button(text(cat.to_string()).size(Typography::SIZE_BODY_SM))
-            .padding(Padding::from([Spacing::XXS, Spacing::SM]))
-            .on_press(LauncherMessage::SelectCategory(cs))
-            .style(move |_t: &Theme, status: Status| {
-                let c = &tc.colors;
-                if is_active {
-                    ButtonStyle { background: Some(Background::Color(c.accent)), text_color: c.text_on_accent, border: Border { color: Color::TRANSPARENT, width: 0.0, radius: Radii::FULL.into() }, shadow: iced::Shadow::default(), snap: false }
-                } else {
-                    let (bg, t) = match status {
-                        Status::Active | Status::Disabled => (Some(Background::Color(Color::from_rgba(1.0, 1.0, 1.0, 0.06))), c.text_secondary),
-                        Status::Hovered => (Some(Background::Color(Color::from_rgba(1.0, 1.0, 1.0, 0.1))), c.text_primary),
-                        Status::Pressed => (Some(Background::Color(c.accent_subtle)), c.accent),
-                    };
-                    ButtonStyle { background: bg, text_color: t, border: Border { color: Color::TRANSPARENT, width: 0.0, radius: Radii::FULL.into() }, shadow: iced::Shadow::default(), snap: false }
-                }
-            });
-        cat_row = cat_row.push(btn);
-    }
-    let cat_container = container(cat_row).center_x(Length::Fill);
-
+    // ── 2. Pinned Apps Grid (3 columns, compact mac-style grid) ──
     let filtered = state.filtered_apps();
-    let cols = 6;
-    let mut grid = column![].spacing(Spacing::SM);
-    let mut current_row = row![].spacing(Spacing::SM);
-    let mut col_count = 0;
+    let mut apps_col = column![].spacing(Spacing::XS);
+    let mut current_row = row![].spacing(Spacing::XS);
+    let mut count = 0;
 
     for app in &filtered {
         let app_id = app.id.clone();
         let tc = theme.clone();
-        let text_color = colors.text_primary;
+
         let app_btn = button(
-            column![
-                container(text(app.icon.clone()).size(36.0)).center_x(Length::Fill).center_y(Length::Fixed(48.0)),
-                container(text(app.name.clone()).size(Typography::SIZE_BODY_SM).color(text_color)).center_x(Length::Fill),
-            ].spacing(Spacing::XXS).align_x(Alignment::Center)
+            row![
+                container(text(app.icon.clone()).size(24.0)).padding(Spacing::XXS),
+                column![
+                    text(app.name.clone()).size(Typography::SIZE_BODY_SM).color(colors.text_primary),
+                    text(app.category.clone()).size(Typography::SIZE_CAPTION).color(colors.text_tertiary),
+                ].spacing(2.0),
+            ]
+            .spacing(Spacing::SM)
+            .align_y(Alignment::Center)
         )
-        .width(Length::Fixed(100.0)).height(Length::Fixed(100.0)).padding(Spacing::XS)
+        .width(Length::Fixed(190.0))
+        .padding(Spacing::XS)
         .on_press(LauncherMessage::LaunchApp(app_id))
         .style(move |_t: &Theme, status: Status| {
-            let (bg, t) = match status {
-                Status::Active | Status::Disabled => (None, tc.colors.text_primary),
-                Status::Hovered => (Some(Background::Color(Color::from_rgba(1.0, 1.0, 1.0, 0.08))), tc.colors.text_primary),
-                Status::Pressed => (Some(Background::Color(Color::from_rgba(1.0, 1.0, 1.0, 0.14))), tc.colors.text_primary),
+            let bg = match status {
+                Status::Active | Status::Disabled => None,
+                Status::Hovered => Some(Background::Color(Color::from_rgba(1.0, 1.0, 1.0, 0.06))),
+                Status::Pressed => Some(Background::Color(Color::from_rgba(1.0, 1.0, 1.0, 0.1))),
             };
-            ButtonStyle { background: bg, text_color: t, border: Border { color: Color::TRANSPARENT, width: 0.0, radius: Radii::LG.into() }, shadow: iced::Shadow::default(), snap: false }
+            ButtonStyle {
+                background: bg,
+                text_color: tc.colors.text_primary,
+                border: Border { color: Color::TRANSPARENT, width: 0.0, radius: Radii::MD.into() },
+                shadow: iced::Shadow::default(),
+                snap: false,
+            }
         });
+
         current_row = current_row.push(app_btn);
-        col_count += 1;
-        if col_count >= cols { grid = grid.push(current_row); current_row = row![].spacing(Spacing::SM); col_count = 0; }
+        count += 1;
+
+        if count >= 3 {
+            apps_col = apps_col.push(current_row);
+            current_row = row![].spacing(Spacing::XS);
+            count = 0;
+        }
     }
-    if col_count > 0 { grid = grid.push(current_row); }
+    if count > 0 {
+        apps_col = apps_col.push(current_row);
+    }
 
-    let grid_container = container(scrollable(container(grid).center_x(Length::Fill))).center_x(Length::Fill).height(Length::Fill);
+    let apps_section = column![
+        text("Pinned Apps")
+            .size(Typography::SIZE_BODY_SM)
+            .color(colors.text_secondary),
+        Space::new().height(Length::Fixed(Spacing::XS)),
+        container(scrollable(apps_col)).height(Length::Fixed(200.0)),
+    ];
 
-    let layout = column![
-        Space::new().height(Length::Fixed(60.0)),
+    // ── 3. Recent Items Section (Windows-style) ──
+    let mut recents_col = column![].spacing(Spacing::XXS);
+    for item in &state.recents {
+        let path = item.path.clone();
+        let tc = theme.clone();
+
+        let item_btn = button(
+            row![
+                text(item.icon.clone()).size(20.0),
+                column![
+                    text(item.name.clone()).size(Typography::SIZE_BODY_SM).color(colors.text_primary),
+                    text(item.path.clone()).size(Typography::SIZE_CAPTION).color(colors.text_tertiary),
+                ].spacing(2.0),
+                Space::new().width(Length::Fill),
+                text(item.time.clone()).size(Typography::SIZE_CAPTION).color(colors.text_tertiary),
+            ]
+            .spacing(Spacing::SM)
+            .align_y(Alignment::Center)
+        )
+        .width(Length::Fill)
+        .padding(Spacing::XS)
+        .on_press(LauncherMessage::OpenFile(path))
+        .style(move |_t: &Theme, status: Status| {
+            let bg = match status {
+                Status::Active | Status::Disabled => None,
+                Status::Hovered => Some(Background::Color(Color::from_rgba(1.0, 1.0, 1.0, 0.06))),
+                Status::Pressed => Some(Background::Color(Color::from_rgba(1.0, 1.0, 1.0, 0.1))),
+            };
+            ButtonStyle {
+                background: bg,
+                text_color: tc.colors.text_primary,
+                border: Border { color: Color::TRANSPARENT, width: 0.0, radius: Radii::MD.into() },
+                shadow: iced::Shadow::default(),
+                snap: false,
+            }
+        });
+
+        recents_col = recents_col.push(item_btn);
+    }
+
+    let recents_section = column![
+        text("Recommended Files")
+            .size(Typography::SIZE_BODY_SM)
+            .color(colors.text_secondary),
+        Space::new().height(Length::Fixed(Spacing::XS)),
+        recents_col,
+    ];
+
+    // ── 4. Bottom Footer (User profile + Power Menu) ──
+    let footer_bg = colors.bg_surface;
+    let divider = colors.divider;
+
+    let footer = container(
+        row![
+            // User Avatar & Name
+            row![
+                text(state.user_avatar.clone()).size(24.0),
+                text(state.user_name.clone()).size(Typography::SIZE_BODY_SM).color(colors.text_primary),
+            ]
+            .spacing(Spacing::SM)
+            .align_y(Alignment::Center),
+            
+            Space::new().width(Length::Fill),
+            
+            // Power Button
+            button(text("⚙️").size(18.0))
+                .padding(Spacing::XS)
+                .on_press(LauncherMessage::PowerAction("settings".into()))
+                .style(move |_t, _s| ghost_btn(colors.text_secondary)),
+            button(text("🔒").size(18.0))
+                .padding(Spacing::XS)
+                .on_press(LauncherMessage::PowerAction("lock".into()))
+                .style(move |_t, _s| ghost_btn(colors.text_secondary)),
+            button(text("⏻").size(18.0))
+                .padding(Spacing::XS)
+                .on_press(LauncherMessage::PowerAction("shutdown".into()))
+                .style(move |_t, _s| ghost_btn(colors.error)),
+        ]
+        .align_y(Alignment::Center)
+    )
+    .padding(Spacing::SM)
+    .width(Length::Fill)
+    .style(move |_t: &Theme| iced::widget::container::Style {
+        background: Some(Background::Color(footer_bg)),
+        border: Border { color: divider, width: 0.0, radius: Radii::LG.into() },
+        ..Default::default()
+    });
+
+    // ── Assemble Start Menu Layout ──
+    let content = column![
         search,
-        Space::new().height(Length::Fixed(20.0)),
-        cat_container,
-        Space::new().height(Length::Fixed(24.0)),
-        grid_container,
-    ].align_x(Alignment::Center);
+        Space::new().height(Length::Fixed(Spacing::MD)),
+        apps_section,
+        Space::new().height(Length::Fixed(Spacing::MD)),
+        recents_section,
+        Space::new().height(Length::Fill),
+        footer,
+    ]
+    .spacing(Spacing::XS);
 
-    container(layout).width(Length::Fill).height(Length::Fill).padding(Spacing::LG)
-        .style(|_t: &Theme| iced::widget::container::Style {
-            background: Some(Background::Color(Color::from_rgba(0.02, 0.02, 0.04, 0.92))),
-            ..Default::default()
-        }).into()
+    // Floating card container (Windows 11 style popup layout)
+    let card_bg = colors.bg_elevated;
+    let card_border = colors.border;
+
+    container(
+        container(content)
+            .width(Length::Fixed(600.0))
+            .height(Length::Fixed(550.0))
+            .padding(Spacing::MD)
+            .style(move |_t: &Theme| iced::widget::container::Style {
+                background: Some(Background::Color(card_bg)),
+                border: Border { color: card_border, width: 1.0, radius: Radii::XL.into() },
+                text_color: None,
+                shadow: iced::Shadow {
+                    color: Color::from_rgba(0.0, 0.0, 0.0, 0.45),
+                    offset: iced::Vector::new(0.0, 16.0),
+                    blur_radius: 48.0,
+                },
+                snap: false,
+            })
+    )
+    .width(Length::Fill)
+    .height(Length::Fill)
+    .center_x(Length::Fill)
+    .align_bottom(Length::Fill)
+    .padding(Padding::from(Spacing::LG))
+    .into()
+}
+
+fn ghost_btn(color: Color) -> ButtonStyle {
+    ButtonStyle {
+        background: None,
+        text_color: color,
+        border: Border::default(),
+        shadow: iced::Shadow::default(),
+        snap: false,
+    }
 }
 
 fn default_apps() -> Vec<AppEntry> {
     vec![
-        AppEntry { id: "nyx-files".into(), name: "Files".into(), icon: "📁".into(), category: "System".into(), description: "File manager".into() },
-        AppEntry { id: "nyx-browser".into(), name: "Browser".into(), icon: "🌐".into(), category: "Productivity".into(), description: "Web browser".into() },
-        AppEntry { id: "nyx-terminal".into(), name: "Terminal".into(), icon: "⬛".into(), category: "System".into(), description: "Terminal emulator".into() },
-        AppEntry { id: "nyx-editor".into(), name: "Editor".into(), icon: "📝".into(), category: "Productivity".into(), description: "Text editor".into() },
-        AppEntry { id: "nyx-settings".into(), name: "Settings".into(), icon: "⚙️".into(), category: "System".into(), description: "System settings".into() },
-        AppEntry { id: "nyx-store".into(), name: "Store".into(), icon: "🛍️".into(), category: "System".into(), description: "App store".into() },
-        AppEntry { id: "nyx-music".into(), name: "Music".into(), icon: "🎵".into(), category: "Media".into(), description: "Music player".into() },
-        AppEntry { id: "nyx-video".into(), name: "Videos".into(), icon: "🎬".into(), category: "Media".into(), description: "Video player".into() },
-        AppEntry { id: "nyx-photos".into(), name: "Photos".into(), icon: "📷".into(), category: "Media".into(), description: "Photo viewer".into() },
-        AppEntry { id: "nyx-mail".into(), name: "Mail".into(), icon: "✉️".into(), category: "Productivity".into(), description: "Email client".into() },
-        AppEntry { id: "nyx-calendar".into(), name: "Calendar".into(), icon: "📅".into(), category: "Productivity".into(), description: "Calendar".into() },
-        AppEntry { id: "nyx-monitor".into(), name: "Monitor".into(), icon: "📊".into(), category: "Utilities".into(), description: "System monitor".into() },
+        AppEntry { id: "files".into(), name: "Files".into(), icon: "📁".into(), category: "System Tool".into() },
+        AppEntry { id: "browser".into(), name: "Web Browser".into(), icon: "🌐".into(), category: "Productivity".into() },
+        AppEntry { id: "terminal".into(), name: "Terminal".into(), icon: "⬛".into(), category: "System Tool".into() },
+        AppEntry { id: "editor".into(), name: "Text Editor".into(), icon: "📝".into(), category: "Productivity".into() },
+        AppEntry { id: "settings".into(), name: "Settings".into(), icon: "⚙️".into(), category: "Configuration".into() },
+        AppEntry { id: "music".into(), name: "Music".into(), icon: "🎵".into(), category: "Media Player".into() },
+    ]
+}
+
+fn default_recents() -> Vec<RecentFile> {
+    vec![
+        RecentFile { name: "Project Draft.md".into(), path: "~/Documents/".into(), icon: "📄".into(), time: "5m ago".into() },
+        RecentFile { name: "wallpaper.png".into(), path: "~/Pictures/".into(), icon: "🖼️".into(), time: "1h ago".into() },
+        RecentFile { name: "build-iso.yml".into(), path: "~/.github/workflows/".into(), icon: "⚙️".into(), time: "Yesterday".into() },
     ]
 }

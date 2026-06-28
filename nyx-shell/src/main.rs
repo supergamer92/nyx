@@ -8,7 +8,7 @@ mod control_center;
 
 use iced::{
     Element, Length, Theme, Subscription, Color,
-    widget::{column, container, text, Space},
+    widget::{column, container, text, Space, stack},
 };
 use nyx_widgets::theme::NyxTheme;
 use std::time::Duration;
@@ -78,7 +78,17 @@ impl NyxShell {
         match message {
             Message::Tick => { self.clock_text = chrono::Local::now().format("%H:%M").to_string(); }
             Message::TopBar(msg) => { self.top_bar.update(msg); }
-            Message::Dock(msg) => { self.dock.update(msg); }
+            Message::Dock(msg) => {
+                match msg {
+                    dock::DockMessage::ToggleStartMenu => {
+                        self.launcher_visible = !self.launcher_visible;
+                        self.control_center_visible = false;
+                    }
+                    _ => {
+                        self.dock.update(msg);
+                    }
+                }
+            }
             Message::Launcher(msg) => {
                 let close = matches!(msg, launcher::LauncherMessage::Close);
                 self.launcher.update(msg);
@@ -112,21 +122,14 @@ impl NyxShell {
         let theme = &self.theme;
         let top = top_bar::view(&self.top_bar, &self.clock_text, theme);
 
-        let desktop = container(
-            if self.launcher_visible {
-                launcher::view(&self.launcher, theme).map(Message::Launcher)
-            } else if self.control_center_visible {
-                control_center::view(&self.control_center, theme).map(Message::ControlCenter)
-            } else {
-                container(
-                    column![
-                        Space::new().height(Length::Fill),
-                        container(text("Nyx OS").size(48.0).color(Color::from_rgba(1.0, 1.0, 1.0, 0.15))).center_x(Length::Fill),
-                        container(text("v0.1.0-dev").size(16.0).color(Color::from_rgba(1.0, 1.0, 1.0, 0.08))).center_x(Length::Fill),
-                        Space::new().height(Length::Fill),
-                    ]
-                ).width(Length::Fill).height(Length::Fill).into()
-            },
+        // Layer 0: Desktop Wallpaper & centered text
+        let wallpaper = container(
+            column![
+                Space::new().height(Length::Fill),
+                container(text("Nyx OS").size(48.0).color(Color::from_rgba(1.0, 1.0, 1.0, 0.15))).center_x(Length::Fill),
+                container(text("v0.1.0-dev").size(16.0).color(Color::from_rgba(1.0, 1.0, 1.0, 0.08))).center_x(Length::Fill),
+                Space::new().height(Length::Fill),
+            ]
         )
         .width(Length::Fill)
         .height(Length::Fill)
@@ -135,11 +138,24 @@ impl NyxShell {
             ..Default::default()
         });
 
+        // Layer 1: Floating Launcher (Start Menu) or Control Center overlays
+        let mut layers = stack![wallpaper];
+
+        if self.launcher_visible {
+            layers = layers.push(
+                launcher::view(&self.launcher, theme).map(Message::Launcher)
+            );
+        } else if self.control_center_visible {
+            layers = layers.push(
+                control_center::view(&self.control_center, theme).map(Message::ControlCenter)
+            );
+        }
+
         let dock_bar = dock::view(&self.dock, theme);
 
         let shell = column![
             top.map(Message::TopBar),
-            desktop,
+            container(layers).width(Length::Fill).height(Length::Fill),
             dock_bar.map(Message::Dock),
         ];
 

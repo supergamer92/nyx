@@ -84,7 +84,7 @@ jobs:
               # cage handles all DRM/KMS setup and creates the Wayland display automatically.
               echo "[nyx] Launching cage with nyx-shell..."
               exec cage -s -- /usr/bin/nyx-shell
-              STARTEOF
+          STARTEOF
               chmod +x /tmp/nyx-iso-build/airootfs/usr/bin/nyx-start-desktop
               
               echo '==> Configuring automatic GUI desktop boot service...'
@@ -120,7 +120,7 @@ jobs:
 
               [Install]
               WantedBy=multi-user.target
-              SVCEOF
+          SVCEOF
 
               ln -sf /etc/systemd/system/nyx-desktop.service /tmp/nyx-iso-build/airootfs/etc/systemd/system/multi-user.target.wants/nyx-desktop.service
 
@@ -132,14 +132,15 @@ jobs:
               [Service]
               ExecStart=
               ExecStart=-/sbin/agetty --autologin root --noclear %I $TERM
-              EOF
+          EOF
 
               echo '==> Assembling bootable ISO...'
               mkarchiso -v -w /tmp/nyx-iso-work -o /workspace/out /tmp/nyx-iso-build
               
               echo '==> Build completed successfully!'
               ls -la /workspace/out
-DOCKEREOF
+          DOCKEREOF
+
 
       - name: Upload ISO Artifact
         uses: actions/upload-artifact@v4

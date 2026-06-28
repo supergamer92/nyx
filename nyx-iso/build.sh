@@ -60,13 +60,32 @@ if [[ -d "$SCRIPT_DIR/airootfs" ]]; then
     cp -r "$SCRIPT_DIR/airootfs/"* "$WORK_DIR/airootfs/"
 fi
 
-# Set up live environment auto-login and compositor start
-mkdir -p "$WORK_DIR/airootfs/etc/systemd/system/getty@tty1.service.d/"
-cat > "$WORK_DIR/airootfs/etc/systemd/system/getty@tty1.service.d/autologin.conf" << 'EOF'
-[Service]
-ExecStart=
-ExecStart=-/sbin/agetty --autologin nyx --noclear %I $TERM
+# Create live user (nyx) via sysusers.d
+mkdir -p "$WORK_DIR/airootfs/etc/sysusers.d/"
+cat > "$WORK_DIR/airootfs/etc/sysusers.d/nyx-live.conf" << 'EOF'
+u nyx - "Nyx OS Live User" /home/nyx /bin/bash
+m nyx wheel
 EOF
+
+# Create home directory via tmpfiles.d
+mkdir -p "$WORK_DIR/airootfs/etc/tmpfiles.d/"
+echo 'd /home/nyx 0700 nyx nyx -' > "$WORK_DIR/airootfs/etc/tmpfiles.d/nyx-home.conf"
+
+# Passwordless sudo for wheel group
+mkdir -p "$WORK_DIR/airootfs/etc/sudoers.d/"
+echo '%wheel ALL=(ALL:ALL) NOPASSWD: ALL' > "$WORK_DIR/airootfs/etc/sudoers.d/10-wheel"
+
+# Configure SDDM autologin to Plasma Wayland
+mkdir -p "$WORK_DIR/airootfs/etc/sddm.conf.d/"
+cat > "$WORK_DIR/airootfs/etc/sddm.conf.d/autologin.conf" << 'EOF'
+[Autologin]
+User=nyx
+Session=plasma.desktop
+EOF
+
+# Enable SDDM display manager
+mkdir -p "$WORK_DIR/airootfs/etc/systemd/system/"
+ln -sf /usr/lib/systemd/system/sddm.service "$WORK_DIR/airootfs/etc/systemd/system/display-manager.service"
 
 # Build the ISO
 echo "[4/5] Building ISO (this takes a while)..."

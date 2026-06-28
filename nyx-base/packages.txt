@@ -45,7 +45,10 @@ xf86-video-amdgpu
 wayland
 wayland-protocols
 xorg-xwayland
-cage
+plasma-desktop
+sddm
+konsole
+dolphin
 seatd
 
 # ─── Fonts & UI ──────────────────────────────────

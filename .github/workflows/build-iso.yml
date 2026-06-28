@@ -38,7 +38,7 @@ jobs:
               pacman -Sy --noconfirm archlinux-keyring || true
               pacman-key --init || true
               pacman-key --populate archlinux || true
-              pacman -Syu --noconfirm archiso git sudo rust cargo pkg-config wayland wayland-protocols libinput systemd mesa libxkbcommon pixman
+              pacman -Syu --noconfirm archiso git sudo rust cargo pkg-config wayland wayland-protocols libinput systemd mesa libxkbcommon pixman libseat
               
               echo '==> Building Nyx compositor and shell binaries...'
               cargo build --release -p nyx-compositor -p nyx-shell -p nyx-settingsd -p nyx-hw -p nyx-updater

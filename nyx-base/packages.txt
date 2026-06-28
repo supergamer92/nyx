@@ -2,8 +2,8 @@
 # Curated set of packages for Nyx OS live & installed environment
 
 # ─── Kernel & Base ───────────────────────────────
-linux-lts
-linux-lts-headers
+linux
+linux-headers
 linux-firmware
 base
 base-devel

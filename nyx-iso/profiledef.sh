@@ -21,7 +21,6 @@ airootfs_image_tool_options=('-comp' 'zstd' '-Xcompression-level' '15')
 file_permissions=(
     ["/etc/shadow"]="0:0:400"
     ["/usr/bin/nyx-shell"]="0:0:755"
-    ["/usr/bin/nyx-compositor"]="0:0:755"
     ["/usr/bin/nyx-settingsd"]="0:0:755"
     ["/usr/bin/nyx-hw"]="0:0:755"
     ["/usr/bin/nyx-updater"]="0:0:755"

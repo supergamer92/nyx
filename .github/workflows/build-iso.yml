@@ -47,8 +47,8 @@ jobs:
               echo '==> Installing compatible libdisplay-info version (0.2.0) from Archive...'
               pacman -U --noconfirm https://archive.archlinux.org/packages/l/libdisplay-info/libdisplay-info-0.2.0-1-x86_64.pkg.tar.zst
               
-              echo '==> Building Nyx compositor and shell binaries...'
-              cargo build --release -p nyx-compositor -p nyx-shell -p nyx-settingsd -p nyx-hw -p nyx-updater
+              echo '==> Building Nyx shell binaries (compositor handled by cage)...'
+              cargo build --release -p nyx-shell -p nyx-settingsd -p nyx-hw -p nyx-updater
               
               echo '==> Preparing ISO build environment...'
               mkdir -p /tmp/nyx-iso-build /workspace/out
@@ -60,7 +60,6 @@ jobs:
               
               echo '==> Installing Nyx binaries into live filesystem...'
               mkdir -p /tmp/nyx-iso-build/airootfs/usr/bin/
-              cp /workspace/target/release/nyx-compositor /tmp/nyx-iso-build/airootfs/usr/bin/
               cp /workspace/target/release/nyx-shell /tmp/nyx-iso-build/airootfs/usr/bin/
               cp /workspace/target/release/nyx-settingsd /tmp/nyx-iso-build/airootfs/usr/bin/
               cp /workspace/target/release/nyx-hw /tmp/nyx-iso-build/airootfs/usr/bin/
@@ -70,50 +69,70 @@ jobs:
               chmod +x /tmp/nyx-iso-build/airootfs/usr/bin/nyx-*
               
               echo '==> Creating Desktop startup launcher...'
-              cat << 'EOF' > /tmp/nyx-iso-build/airootfs/usr/bin/nyx-start-desktop
-          #!/bin/bash
-          # Start settings daemon
-          /usr/bin/nyx-settingsd &
-          
-          # Start compositor in the background
-          /usr/bin/nyx-compositor &
-          
-          # Wait for Wayland display socket to initialize
-          sleep 1.5
-          
-          # Run the Shell UI
-          export WAYLAND_DISPLAY=wayland-0
-          exec /usr/bin/nyx-shell
-          EOF
+              cat << 'STARTEOF' > /tmp/nyx-iso-build/airootfs/usr/bin/nyx-start-desktop
+#!/bin/bash
+set -e
+exec > /tmp/nyx-desktop.log 2>&1
+echo "[nyx] Starting Nyx OS Desktop Session..."
+echo "[nyx] Date: $(date)"
+
+# Start the settings daemon in the background
+echo "[nyx] Starting nyx-settingsd..."
+/usr/bin/nyx-settingsd &
+
+# Use cage (kiosk Wayland compositor) to launch nyx-shell fullscreen.
+# cage handles all DRM/KMS setup and creates the Wayland display automatically.
+echo "[nyx] Launching cage with nyx-shell..."
+exec cage -s -- /usr/bin/nyx-shell
+STARTEOF
               chmod +x /tmp/nyx-iso-build/airootfs/usr/bin/nyx-start-desktop
               
               echo '==> Configuring automatic GUI desktop boot service...'
               mkdir -p /tmp/nyx-iso-build/airootfs/etc/systemd/system/multi-user.target.wants/
               mkdir -p /tmp/nyx-iso-build/airootfs/etc/systemd/system/getty@tty1.service.d/
               
-              cat << 'EOF' > /tmp/nyx-iso-build/airootfs/etc/systemd/system/nyx-desktop.service
-          [Unit]
-          Description=Nyx OS Desktop GUI Session
-          After=network.target sound.target
+              # Enable seatd for seat/session management (required by cage)
+              mkdir -p /tmp/nyx-iso-build/airootfs/etc/systemd/system/sockets.target.wants/
+              ln -sf /usr/lib/systemd/system/seatd.service /tmp/nyx-iso-build/airootfs/etc/systemd/system/multi-user.target.wants/seatd.service
+              
+              cat << 'SVCEOF' > /tmp/nyx-iso-build/airootfs/etc/systemd/system/nyx-desktop.service
+[Unit]
+Description=Nyx OS Desktop GUI Session
+After=seatd.service systemd-logind.service
+Wants=seatd.service
+ConditionPathExists=/usr/bin/nyx-shell
 
-          [Service]
-          Type=simple
-          User=root
-          WorkingDirectory=/root
-          ExecStart=/usr/bin/nyx-start-desktop
-          Restart=always
+[Service]
+Type=simple
+User=root
+PAMName=login
+TTYPath=/dev/tty7
+StandardInput=tty
+StandardOutput=journal
+StandardError=journal
+UtmpIdentifier=tty7
+ExecStart=/usr/bin/nyx-start-desktop
+Restart=on-failure
+RestartSec=3
+Environment=XDG_RUNTIME_DIR=/run/user/0
+Environment=XDG_SESSION_TYPE=wayland
+Environment=WLR_LIBINPUT_NO_DEVICES=1
 
-          [Install]
-          WantedBy=multi-user.target
-          EOF
+[Install]
+WantedBy=multi-user.target
+SVCEOF
 
               ln -sf /etc/systemd/system/nyx-desktop.service /tmp/nyx-iso-build/airootfs/etc/systemd/system/multi-user.target.wants/nyx-desktop.service
 
+              # Ensure XDG_RUNTIME_DIR exists for root
+              mkdir -p /tmp/nyx-iso-build/airootfs/etc/tmpfiles.d/
+              echo 'd /run/user/0 0700 root root -' > /tmp/nyx-iso-build/airootfs/etc/tmpfiles.d/nyx-runtime.conf
+
               cat << 'EOF' > /tmp/nyx-iso-build/airootfs/etc/systemd/system/getty@tty1.service.d/autologin.conf
-          [Service]
-          ExecStart=
-          ExecStart=-/sbin/agetty --autologin root --noclear %I \$TERM
-          EOF
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin root --noclear %I \$TERM
+EOF
 
               echo '==> Assembling bootable ISO...'
               mkarchiso -v -w /tmp/nyx-iso-work -o /workspace/out /tmp/nyx-iso-build

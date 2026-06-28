@@ -25,17 +25,18 @@ jobs:
             -w /workspace \
             archlinux:latest \
             /bin/bash -c "
-              set -e
-              echo '==> Initializing pacman keys and updating package database...'
+              set -ex
+              echo '==> Updating pacman keys & upgrading keyring...'
+              pacman -Sy --noconfirm archlinux-keyring || true
               pacman-key --init || true
-              pacman-key --populate || true
-              pacman -Sy --noconfirm archiso git sudo
+              pacman-key --populate archlinux || true
+              pacman -Syu --noconfirm archiso git sudo
               
               echo '==> Preparing build environment...'
               mkdir -p /tmp/nyx-iso-build /workspace/out
               cp -r /usr/share/archiso/configs/releng/* /tmp/nyx-iso-build/
               
-              echo '==> Applying Nyx packages and configurations...'
+              echo '==> Applying Nyx packages...'
               grep -v '^#' /workspace/nyx-base/packages.txt | grep -v '^$' >> /tmp/nyx-iso-build/packages.x86_64
               
               if [ -d '/workspace/nyx-iso/airootfs' ]; then

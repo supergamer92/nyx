@@ -1,0 +1,114 @@
+# Nyx OS — Base Package List
+#
+# The curated set of packages that make up the Nyx base system.
+# Installed via pacman. Third-party apps use Flatpak.
+#
+# Philosophy: Include exactly what's needed, nothing more.
+
+# ─── Kernel & Boot ───────────────────────────────
+linux-lts
+linux-lts-headers
+linux-firmware
+base
+base-devel
+systemd-boot
+
+# ─── Filesystem ──────────────────────────────────
+btrfs-progs
+dosfstools
+e2fsprogs
+ntfs-3g
+
+# ─── Networking ──────────────────────────────────
+networkmanager
+iwd
+bluez
+bluez-utils
+nftables
+wireguard-tools
+openssh
+
+# ─── Audio & Video ───────────────────────────────
+pipewire
+pipewire-alsa
+pipewire-pulse
+pipewire-jack
+wireplumber
+gstreamer
+gst-plugins-base
+gst-plugins-good
+gst-plugins-bad
+gst-plugins-ugly
+gst-libav
+
+# ─── Graphics (Mesa — AMD/Intel) ─────────────────
+mesa
+vulkan-icd-loader
+vulkan-mesa-layers
+libva-mesa-driver
+mesa-vdpau
+xf86-video-amdgpu
+
+# ─── Graphics (NVIDIA — optional, offered in installer) ──
+# nvidia-lts
+# nvidia-utils
+# nvidia-settings
+# lib32-nvidia-utils
+
+# ─── Wayland ─────────────────────────────────────
+wayland
+wayland-protocols
+xorg-xwayland
+
+# ─── Fonts ───────────────────────────────────────
+ttf-inter
+ttf-jetbrains-mono
+noto-fonts
+noto-fonts-cjk
+noto-fonts-emoji
+noto-fonts-extra
+
+# ─── Input ───────────────────────────────────────
+libinput
+xdg-desktop-portal
+
+# ─── Printing ────────────────────────────────────
+cups
+cups-filters
+
+# ─── Security ────────────────────────────────────
+polkit
+gnome-keyring
+fprintd
+
+# ─── Flatpak ─────────────────────────────────────
+flatpak
+xdg-desktop-portal
+
+# ─── Gaming (optional group) ─────────────────────
+# steam
+# gamemode
+# lib32-mesa
+# lib32-vulkan-icd-loader
+# mangohud
+
+# ─── Utilities ───────────────────────────────────
+git
+curl
+wget
+unzip
+p7zip
+htop
+fastfetch
+
+# ─── Nyx Custom Packages ────────────────────────
+# nyx-compositor
+# nyx-shell
+# nyx-widgets
+# nyx-settings
+# nyx-updater
+# nyx-hw
+# nyx-portal
+# nyx-session
+# nyx-auth
+# nyx-branding

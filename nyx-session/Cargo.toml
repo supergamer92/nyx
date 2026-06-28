@@ -1,0 +1,12 @@
+[package]
+name = "nyx-session"
+description = "Nyx OS session manager — login, lock, sleep, shutdown"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }

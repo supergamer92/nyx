@@ -1,0 +1,15 @@
+[package]
+name = "nyx-settingsd"
+description = "Nyx OS settings daemon — centralized configuration via D-Bus"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+tokio = { workspace = true }
+zbus = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }

@@ -1,0 +1,62 @@
+name: Build Nyx OS ISO
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-iso:
+    name: Build Arch Linux-based Nyx OS ISO
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Build ISO inside Arch Linux Container
+        run: |
+          docker run --rm --privileged \
+            -v ${{ github.workspace }}:/workspace \
+            w/workspace \
+            archlinux:latest \
+            /bin/bash -c "
+              set -e
+              echo '==> Updating package databases and installing archiso...'
+              pacman -Sy --noconfirm archiso git sudo
+              
+              echo '==> Preparing build environment...'
+              mkdir -p /tmp/nyx-iso-build /workspace/out
+              cp -r /usr/share/archiso/configs/releng/* /tmp/nyx-iso-build/
+              
+              echo '==> Applying Nyx packages and configurations...'
+              grep -v '^#' /workspace/nyx-base/packages.txt | grep -v '^$' >> /tmp/nyx-iso-build/packages.x86_64
+              
+              if [ -d '/workspace/nyx-iso/airootfs' ]; then
+                cp -r /workspace/nyx-iso/airootfs/* /tmp/nyx-iso-build/airootfs/
+              fi
+              
+              mkdir -p /tmp/nyx-iso-build/airootfs/etc/systemd/system/getty@tty1.service.d/
+              cat << 'EOF' > /tmp/nyx-iso-build/airootfs/etc/systemd/system/getty@tty1.service.d/autologin.conf
+          [Service]
+          ExecStart=
+          ExecStart=-/sbin/agetty --autologin nyx --noclear %I \$TERM
+          EOF
+
+              echo '==> Building ISO via mkarchiso...'
+              mkarchiso -v -w /tmp/nyx-iso-work -o /workspace/out /tmp/nyx-iso-build
+              
+              echo '==> Build completed successfully!'
+              ls -la /workspace/out
+            "
+
+      - name: Upload ISO Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nyx-os-iso
+          path: out/*.iso
+          retention-days: 7
